@@ -7,22 +7,33 @@ const db = monk(dbURL)
 const users = db.get("users")
 const posts = db.get("posts")
 
+class User {
+  uid: string
+  posts: boolean
+  contact: boolean
+  constructor(UID: string) {
+    this.uid = UID
+    this.posts = false
+    this.contact = false
+  }
+}
 
 async function doesUserExist(UID:string) {
   const docs = await users.findOne({ uid: UID })
   return docs ? true : false
 }
 async function createUser(UID:string) {
-  const docs = await users.insert({uid: UID})
+  const docs = await users.insert(new User(UID))
   console.log(docs)
 }
 async function getUser(UID:string) {
   const docs = await users.find({ uid: UID})
   return docs
 }
-async function addPostsUtility(UID:string) {
-  const docs = await users.findOneAndUpdate({uid: UID}, {$set: {posts: true}})
+async function modifyUser(UID: string, name: string, value: string) {
+  const docs = await users.findOneAndUpdate({uid: UID}, {$set: {[name]: value}})
   console.log(docs)
+  return docs
 }
 
 const app = express()
@@ -35,6 +46,9 @@ app.post("/user", async (req, res) => {
     await createUser(req.body.UID)
   }
   res.json(await getUser(req.body.UID))
+})
+app.post("/userModify", async (req, res) => {
+  res.json(await modifyUser(req.body.UID, req.body.name, req.body.value))
 })
 
 app.listen(port, () => {
