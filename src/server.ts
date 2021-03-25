@@ -35,6 +35,10 @@ async function modifyUser(UID: string, name: string, value: string) {
   console.log(docs)
   return docs
 }
+async function deleteUser(UID: string) {
+  const docs = await users.findOneAndDelete({uid: UID});
+  return docs
+}
 
 const app = express()
 const port = 4000
@@ -49,6 +53,9 @@ app.post("/user", async (req, res) => {
 })
 app.post("/userModify", async (req, res) => {
   res.json(await modifyUser(req.body.UID, req.body.name, req.body.value))
+})
+app.post("/userDelete", async (req, res) => {
+  res.json(await deleteUser(req.body.UID))
 })
 
 app.listen(port, () => {
