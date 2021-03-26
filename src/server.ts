@@ -1,63 +1,34 @@
 import express from "express"
+var { graphqlHTTP } = require('express-graphql');
+var { buildSchema } = require('graphql');
 import monk from "monk"
-import { json } from "body-parser"
 
 const dbURL = "mongodb://127.0.0.1:27017/aurora"
 const db = monk(dbURL)
 const users = db.get("users")
 const posts = db.get("posts")
 
-class User {
-  uid: string
-  posts: boolean
-  contact: boolean
-  constructor(UID: string) {
-    this.uid = UID
-    this.posts = false
-    this.contact = false
+const schema = buildSchema(`
+  type Query {
+    hello: String
   }
-}
+`)
 
-async function doesUserExist(UID:string) {
-  const docs = await users.findOne({ uid: UID })
-  return docs ? true : false
-}
-async function createUser(UID:string) {
-  const docs = await users.insert(new User(UID))
-  console.log(docs)
-}
-async function getUser(UID:string) {
-  const docs = await users.find({ uid: UID})
-  return docs
-}
-async function modifyUser(UID: string, name: string, value: string) {
-  const docs = await users.findOneAndUpdate({uid: UID}, {$set: {[name]: value}})
-  console.log(docs)
-  return docs
-}
-async function deleteUser(UID: string) {
-  const docs = await users.findOneAndDelete({uid: UID});
-  return docs
+const root = {
+  hello: () => {
+    return 'Hello world';
+  }
 }
 
 const app = express()
 const port = 4000
-app.use(json())
 
-
-app.post("/user", async (req, res) => {
-  if (!await doesUserExist(req.body.UID)) {
-    await createUser(req.body.UID)
-  }
-  res.json(await getUser(req.body.UID))
-})
-app.post("/userModify", async (req, res) => {
-  res.json(await modifyUser(req.body.UID, req.body.name, req.body.value))
-})
-app.post("/userDelete", async (req, res) => {
-  res.json(await deleteUser(req.body.UID))
-})
+app.use('/graphql', graphqlHTTP({
+  schema: schema,
+  rootValue: root,
+  graphiql: true,
+}));
 
 app.listen(port, () => {
-  console.log(`API hosted at http://localhost:${port}`)
+  console.log(`GraphQL API hosted at http://localhost:${port}`)
 })
