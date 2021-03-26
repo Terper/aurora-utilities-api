@@ -111,15 +111,23 @@ const root = {
     return dbRes
   },
   createPost: async ({uid, input}:any) => {
+    if (input.date === "now") {
+      input.date = (new Date).toJSON();
+    }
     const dbRes = await posts.insert(new CreatePost(uid, input)).then((docs: object) => {
       return new Post(docs)
     })
     return dbRes
   },
   getPosts: async ({uid}:any) => {
-    const dbRes = await posts.find({uid: uid}).then((docs) => {
+    let dbRes = await posts.find({uid: uid}).then((docs) => {
       return docs
     })
+
+    dbRes.sort((a:any, b:any) => {
+      return (new Date(b.date)).getTime() - (new Date(a.date)).getTime()
+    })
+
     return dbRes.map((doc) => {
       return new Post(doc)
     })
@@ -130,7 +138,7 @@ const root = {
 const app = express()
 const port = 4000
 
-app.use('/graphql', graphqlHTTP({
+app.use('/', graphqlHTTP({
   schema: schema,
   rootValue: root,
   graphiql: true,
