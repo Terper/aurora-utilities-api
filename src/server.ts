@@ -87,6 +87,8 @@ const schema = buildSchema(`
     createUser(uid: String!): User
     modifyUser(uid: String!, input: UserInput): User
     createPost(uid: String!, input: PostInput!): Post
+    modifyPost(id: ID!, input: PostInput): Post
+    deletePost(id: ID!): Post
 
   }
 `)
@@ -115,6 +117,18 @@ const root = {
       input.date = (new Date).toJSON();
     }
     const dbRes = await posts.insert(new CreatePost(uid, input)).then((docs: object) => {
+      return new Post(docs)
+    })
+    return dbRes
+  },
+  deletePost: async ({id}:any) => {
+    let dbRes = await posts.findOneAndDelete({_id: id}).then((docs) => {
+      return new Post(docs)
+    })
+    return dbRes
+  },
+  modifyPost: async ({id, input}:any) => {
+    let dbRes = await posts.findOneAndUpdate({_id: id}, {$set : {input}}).then((docs) => {
       return new Post(docs)
     })
     return dbRes
